@@ -1,0 +1,120 @@
+#!/bin/zsh
+
+TAGDIR=$HOME/.plaintag
+mkdir -p $TAGDIR
+
+
+help()
+{
+    <<EOF
+Usage:
+	$0 list     <tag>  [<tags>...] -- list files tagged with any of these tags
+	$0 show     <file>             -- list tags associated with a file
+	$0 [+|-]tag <file> [<tags>...] -- add, remove or overwrite a tag list associated with a file
+EOF
+}
+
+
+# disassociate a tag with a file
+add_tags()
+{
+    file=$1
+    if ! shift 2> /dev/null; then
+        help
+        return 1
+    fi
+
+    for tag in $TAGDIR/$^argv; do
+        touch $tag
+        echo $file:a | sort --output=$tag --merge --unique -- - $tag
+    done
+}
+
+# associate a new tag with a file
+rm_tags()
+{
+    file=$1
+    if ! shift 2> /dev/null; then
+        help
+        return 1
+    fi
+
+    if [[ -n $argv ]]; then
+        perl -ni -e '
+BEGIN {
+    $file = shift;
+    @tags = @ARGV;
+}
+print if not /^\Q$file\E$/;
+END {
+    unlink for grep {-z $_} @tags
+}' $file:a $TAGDIR/$^argv 2> /dev/null
+    fi
+}
+
+# show tags associated with a file
+show_tags()
+{
+    file=$1
+    if ! shift 2> /dev/null; then
+        help
+        return 1
+    fi
+
+    all_tags=($TAGDIR/*(N))
+    if [[ -n $all_tags ]]; then
+        grep --fixed-strings --line-regexp --files-with-matches -- $file:a $TAGDIR/$^all_tags 2> /dev/null
+    fi
+}
+
+# list files with a given tag
+list_tagged()
+{
+    if [[ -n $argv ]]; then
+        < $TAGDIR/$^argv | sort --unique
+    fi
+}
+
+# overwrite the current file's tags with a new set of tags
+set_tags()
+{
+    file=$1
+    if ! shift 2> /dev/null; then
+        help
+        return 1
+    fi
+
+    IFS=$'\n'
+    new_tags=($argv)
+    current_tags=($(show_tags $file))
+    tags_to_add=(${new_tags:|current_tags})
+    tags_to_remove=(${current_tags:|new_tags})
+    unset IFS
+
+    add_tags $file $tags_to_add
+    rm_tags $file $tags_to_remove
+}
+
+
+cmd=$1
+if ! shift 2> /dev/null; then
+    help
+    return 1
+fi
+
+case $cmd in
+    --help|-h|help)
+        help ;;
+    list)
+        list_tagged $argv ;;
+    show)
+        show_tags $argv ;;
+    +tag)
+        add_tags $argv ;;
+    -tag)
+        rm_tags $argv ;;
+    tag)
+        set_tags $argv ;;
+    *)
+        help; return 1 ;;
+esac
