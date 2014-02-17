@@ -8,7 +8,8 @@ help()
 {
     <<EOF
 Usage:
-	$0 list     <tag>  [<tags>...] -- list files tagged with any of these tags
+	$0 list     <tag>  [<tags>...] -- list files tagged with all of these tags
+	$0 listany  <tag>  [<tags>...] -- list files tagged with any of these tags
 	$0 show     <file>             -- list tags associated with a file
 	$0 [+|-]tag <file> [<tags>...] -- add, remove or overwrite a tag list associated with a file
 EOF
@@ -18,6 +19,8 @@ EOF
 # disassociate a tag with a file
 add_tags()
 {
+    local file tag
+
     file=$1
     if ! shift 2> /dev/null; then
         help
@@ -33,6 +36,8 @@ add_tags()
 # associate a new tag with a file
 rm_tags()
 {
+    local file
+
     file=$1
     if ! shift 2> /dev/null; then
         help
@@ -55,29 +60,65 @@ END {
 # show tags associated with a file
 show_tags()
 {
-    file=$1
+    local file all_tags
+
+    file=$1:a
     if ! shift 2> /dev/null; then
         help
         return 1
     fi
 
-    all_tags=($TAGDIR/*(N))
+    pushd -q $TAGDIR
+    all_tags=(*(N))
     if [[ -n $all_tags ]]; then
-        grep --fixed-strings --line-regexp --files-with-matches -- $file:a $TAGDIR/$^all_tags 2> /dev/null
+        grep --fixed-strings --line-regexp --files-with-matches -- $file $all_tags 2> /dev/null
     fi
+    popd -q
 }
 
-# list files with a given tag
+# list files with any of the given tags
+list_tagged_any()
+{
+    local tags
+
+    pushd -q $TAGDIR
+    tags=(*(N))
+    tags=(${tags:*argv})        # get only the existing tags
+    if [[ -n $tags ]]; then
+        < $tags | sort --unique
+    fi
+    popd -q
+}
+
+# list files with all of the given tags
 list_tagged()
 {
-    if [[ -n $argv ]]; then
-        < $TAGDIR/$^argv | sort --unique
+    local tag tags files tmp
+
+    pushd -q $TAGDIR
+    all_tags=(*(N))
+    # do nothing if any of these tags does not exist or if the list is empty
+    if [[ -n ${argv:|all_tags} || -z $argv ]]; then
+        return
     fi
+    tag=$1
+    shift
+    IFS=$'\n'
+    files=($(< $tag))
+    for tag in $argv; do
+        tmp=($(< $tag))
+        files=${files:*tmp}
+    done
+    unset IFS
+    popd -q
+    print -l $files
 }
 
-# overwrite the current file's tags with a new set of tags
+# overwrite the file's current tags with a new set of tags
 set_tags()
 {
+    local file new_tags current_tags tags_to_add tags_to_remove
+
     file=$1
     if ! shift 2> /dev/null; then
         help
@@ -107,6 +148,8 @@ case $cmd in
         help ;;
     list)
         list_tagged $argv ;;
+    listany)
+        list_tagged_any $argv ;;
     show)
         show_tags $argv ;;
     +tag)
