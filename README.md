@@ -33,7 +33,7 @@ COMMANDS
 
     List only files tagged with all of specified tags. If a tag is
     appended with a minus sign, it means to not match files with with
-    that tag.
+    that tag. **Quirk:** The first tag **must not** be negated.
 
 *   __listany__
 

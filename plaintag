@@ -142,10 +142,10 @@ list_tagged()
         if [[ $tag = *- ]]; then # negated query
             tag=${tag%-} # trim the minus sign
             tmp=($(< $tag))
-            files=${files:|tmp} # set difference
+            files=(${files:|tmp}) # set difference
         else
             tmp=($(< $tag))
-            files=${files:*tmp} # set intersection
+            files=(${files:*tmp}) # set intersection
         fi
     done
     unset IFS
