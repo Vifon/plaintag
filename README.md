@@ -26,6 +26,35 @@ pass a file as an argument for it to show an input box with the
 current tags for that file. Personally I use it with `sxiv` image
 viewer.
 
+COMMANDS
+========
+
+*   __list__
+
+    List only files tagged with all of specified tags. If a tag is
+    appended with a minus sign, it means to not match files with with
+    that tag.
+
+*   __listany__
+
+    List files tagged with any of specified tags.
+
+*   __show__
+
+    Lists tags associated with the specified file.
+
+*   __tag__
+
+    Overwrite the current tags of that file with the new tags.
+
+*   __tag+__
+
+    Add the new tags for the specified file.
+
+*   __tag-__
+
+    Remove the specified tags from file.
+
 OPTIONS
 -------
 
