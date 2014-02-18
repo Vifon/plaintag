@@ -21,6 +21,11 @@ file for each tag. Each of them contains a list of absolute paths to
 files tagged with it. They can be easily modified using tools such as
 `mv`, `sed`, `grep` or `vim`.
 
+The bundled script _plaintag-gui_ allows easy tag manipulation. Just
+pass a file as an argument for it to show an input box with the
+current tags for that file. Personally I use it with `sxiv` image
+viewer.
+
 OPTIONS
 -------
 
