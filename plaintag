@@ -60,7 +60,7 @@ add_tags()
     # Insert the new path into each specified sorted tag file,
     # creating it first if needed.
     for tag in $TAGDIR/$^argv; do
-        touch $tag
+        touch -- $tag
         sort --output=$tag --merge --unique -- - $tag <<< $file
     done
 }
@@ -80,9 +80,9 @@ rm_tags()
     for tag in $argv; do
         tmp="$(mktemp)"
         grep --fixed-strings --line-regexp --invert-match -- $file $TAGDIR/$tag > $tmp
-        mv $tmp $TAGDIR/$tag
+        mv -- $tmp $TAGDIR/$tag
         if [[ ! -s $TAGDIR/$tag ]]; then
-            rm $TAGDIR/$tag
+            rm -- $TAGDIR/$tag
         fi
     done
 }
