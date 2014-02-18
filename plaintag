@@ -80,8 +80,7 @@ rm_tags()
             $file = shift;
             @tags = @ARGV;
         }
-        chomp;
-        print if $_ ne $file;
+        print "$_" if $_ ne "$file\n";
         END {
             unlink for grep {-z $_} @tags
         }' $file:a $TAGDIR/$^argv 2> /dev/null
