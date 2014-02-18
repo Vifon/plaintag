@@ -17,10 +17,6 @@
 #########################################################################
 
 
-TAGDIR=$HOME/.plaintag
-mkdir -p $TAGDIR
-
-
 help()
 {
     <<EOF
@@ -28,9 +24,26 @@ Usage:
 	$0 list     <tag>  [<tag>...] -- list files tagged with all of these tags
 	$0 listany  <tag>  [<tag>...] -- list files tagged with any of these tags
 	$0 show     <file>            -- list tags associated with a file
-	$0 [+|-]tag <file> [<tag>...] -- add, remove or overwrite a tag list associated with a file
+	$0 tag[+|-] <file> [<tag>...] -- add, remove or overwrite a tag list associated with a file
+
+Common options:
+    $0 [ -d <directory> ] ...     -- custom database directory (default: ~/.plaintag)
 EOF
 }
+
+while getopts "d:" ARG; do
+    case "$ARG" in
+        d)
+            TAGDIR=$OPTARG ;;
+        ?)
+            help; return 1 ;;
+    esac
+done
+shift $[$OPTIND-1]
+
+
+[[ -z $TAGDIR ]] && TAGDIR=$HOME/.plaintag
+mkdir -p $TAGDIR
 
 
 # associate a new tag with a file
@@ -53,7 +66,7 @@ add_tags()
 # disassociate a tag with a file
 rm_tags()
 {
-    local file
+    local file tag tmp
 
     file=$1
     if ! shift 2> /dev/null; then
@@ -61,17 +74,11 @@ rm_tags()
         return 1
     fi
 
-    if [[ -n $argv ]]; then
-        perl -ni -e '
-        BEGIN {
-            $file = shift;
-            @tags = @ARGV;
-        }
-        print if not /^\Q$file\E$/;
-        END {
-            unlink for grep {-z $_} @tags
-        }' $file:a $TAGDIR/$^argv 2> /dev/null
-    fi
+    for tag in $argv; do
+        tmp="$(mktemp)"
+        grep --fixed-strings --line-regexp --invert-match -- $file:a $TAGDIR/$tag > $tmp
+        mv $tmp $TAGDIR/$tag
+    done
 }
 
 # show tags associated with a file
@@ -169,9 +176,9 @@ case $cmd in
         list_tagged_any $argv ;;
     show)
         show_tags $argv ;;
-    +tag)
+    tag+)
         add_tags $argv ;;
-    -tag)
+    tag-)
         rm_tags $argv ;;
     tag)
         set_tags $argv ;;

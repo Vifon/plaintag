@@ -20,5 +20,5 @@
 file=$1
 current_tags=($(plaintag show $file))
 
-new_tags=($(zenity --entry --text="\"$file\" tags:" --entry-text="$current_tags" --title="sxiv tagger" --width=512))
+new_tags=($(zenity --entry --text="\"$file\" tags:" --entry-text="$current_tags" --title="plaintag-gui" --width=512))
 (($? == 0)) && plaintag tag $file $=new_tags
