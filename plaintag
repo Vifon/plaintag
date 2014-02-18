@@ -21,13 +21,13 @@ help()
 {
     <<EOF
 Usage:
-	$0 list     <tag>  [<tag>...] -- list files tagged with all of these tags
-	$0 listany  <tag>  [<tag>...] -- list files tagged with any of these tags
-	$0 show     <file>            -- list tags associated with a file
-	$0 tag[+|-] <file> [<tag>...] -- add, remove or overwrite a tag list associated with a file
+	$0 [options] list     <tag>  [<tag>...] -- list files tagged with all of these tags
+	$0 [options] listany  <tag>  [<tag>...] -- list files tagged with any of these tags
+	$0 [options] show     <file>            -- list tags associated with a file
+	$0 [options] tag[+|-] <file> [<tag>...] -- add, remove or overwrite a tag list associated with a file
 
-Common options:
-    $0 [ -d <directory> ] ...     -- custom database directory (default: ~/.plaintag)
+Options:
+	-d <directory>  -- specify a custom database
 EOF
 }
 
@@ -46,42 +46,45 @@ shift $[$OPTIND-1]
 mkdir -p $TAGDIR
 
 
-# associate a new tag with a file
+# Associate a new tag with a file.
 add_tags()
 {
     local file tag
 
-    file=$1
+    file=$1:a
     if ! shift 2> /dev/null; then
         help
         return 1
     fi
 
+    # Insert the new path into each specified sorted tag file,
+    # creating it first if needed.
     for tag in $TAGDIR/$^argv; do
         touch $tag
-        echo $file:a | sort --output=$tag --merge --unique -- - $tag
+        sort --output=$tag --merge --unique -- - $tag <<< $file
     done
 }
 
-# disassociate a tag with a file
+# Disassociate a tag with a file.
 rm_tags()
 {
     local file tag tmp
 
-    file=$1
+    file=$1:a
     if ! shift 2> /dev/null; then
         help
         return 1
     fi
 
+    # Remove the file from each specified tag using a temporary file.
     for tag in $argv; do
         tmp="$(mktemp)"
-        grep --fixed-strings --line-regexp --invert-match -- $file:a $TAGDIR/$tag > $tmp
+        grep --fixed-strings --line-regexp --invert-match -- $file $TAGDIR/$tag > $tmp
         mv $tmp $TAGDIR/$tag
     done
 }
 
-# show tags associated with a file
+# Show tags associated with a file.
 show_tags()
 {
     local file all_tags
@@ -100,7 +103,7 @@ show_tags()
     popd -q
 }
 
-# list files with any of the given tags
+# List files with any of the given tags.
 list_tagged_any()
 {
     local tags
@@ -109,25 +112,26 @@ list_tagged_any()
     tags=(*(N))
     tags=(${tags:*argv})        # get only the existing tags
     if [[ -n $tags ]]; then
-        < $tags | sort --unique
+        sort --unique < $tags
     fi
     popd -q
 }
 
-# list files with all of the given tags
+# List files with all of the given tags.
 list_tagged()
 {
     local tag tags files tmp
 
     pushd -q $TAGDIR
     all_tags=(*(N))
-    # do nothing if any of these tags does not exist or if the list is empty
+    # Do nothing if any of these tags does not exist or if the list is empty.
     if [[ -n ${argv:|all_tags} || -z $argv ]]; then
         return
     fi
     tag=$1
     shift
     IFS=$'\n'
+    # Do a set intersection of all specified tags.
     files=($(< $tag))
     for tag in $argv; do
         tmp=($(< $tag))
@@ -138,7 +142,7 @@ list_tagged()
     print -l $files
 }
 
-# overwrite the file's current tags with a new set of tags
+# Overwrite the file's current tags with a new set of tags.
 set_tags()
 {
     local file new_tags current_tags tags_to_add tags_to_remove
