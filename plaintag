@@ -21,7 +21,7 @@ help()
 {
     <<EOF
 Usage:
-	$0 [options] list     <tag>  [<tag>...] -- list files tagged with all of these tags
+	$0 [options] list     <tag>  [<tag>...] [<not_tag>-...] -- list files tagged with all of these tags
 	$0 [options] listany  <tag>  [<tag>...] -- list files tagged with any of these tags
 	$0 [options] show     <file>            -- list tags associated with a file
 	$0 [options] tag[+|-] <file> [<tag>...] -- add, remove or overwrite a tag list associated with a file
@@ -127,18 +127,26 @@ list_tagged()
 
     pushd -q $TAGDIR
     all_tags=(*(N))
-    # Do nothing if any of these tags does not exist or if the list is empty.
+    all_tags+=($^all_tags-)
+    # Do nothing if any of these tags does not exist or if the list is
+    # empty.  Including their negations.
     if [[ -n ${argv:|all_tags} || -z $argv ]]; then
         return
     fi
     tag=$1
     shift
     IFS=$'\n'
-    # Do a set intersection of all specified tags.
+    # Do a set intersection of all specified tags (or their negations).
     files=($(< $tag))
     for tag in $argv; do
-        tmp=($(< $tag))
-        files=${files:*tmp}
+        if [[ $tag = *- ]]; then # negated query
+            tag=${tag%-} # trim the minus sign
+            tmp=($(< $tag))
+            files=${files:|tmp} # set difference
+        else
+            tmp=($(< $tag))
+            files=${files:*tmp} # set intersection
+        fi
     done
     unset IFS
     popd -q

@@ -6,7 +6,7 @@ Plaintext-based file tagging.
 SYNOPSIS
 --------
 
-    plaintag [options] list     <tag>  [<tag>...] -- list files tagged with all of these tags
+    plaintag [options] list     <tag>  [<tag>...] [<not_tag>-...] -- list files tagged with all of these tags
     plaintag [options] listany  <tag>  [<tag>...] -- list files tagged with any of these tags
     plaintag [options] show     <file>            -- list tags associated with a file
     plaintag [options] tag[+|-] <file> [<tag>...] -- add, remove or overwrite a tag list associated with a file
