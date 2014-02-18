@@ -66,7 +66,7 @@ add_tags()
 # disassociate a tag with a file
 rm_tags()
 {
-    local file
+    local file tag tmp
 
     file=$1
     if ! shift 2> /dev/null; then
@@ -74,17 +74,11 @@ rm_tags()
         return 1
     fi
 
-    if [[ -n $argv ]]; then
-        perl -ni -e '
-        BEGIN {
-            $file = shift;
-            @tags = @ARGV;
-        }
-        print "$_" if $_ ne "$file\n";
-        END {
-            unlink for grep {-z $_} @tags
-        }' $file:a $TAGDIR/$^argv 2> /dev/null
-    fi
+    for tag in $argv; do
+        tmp="$(mktemp)"
+        grep --fixed-strings --line-regexp --invert-match -- $file:a $TAGDIR/$tag > $tmp
+        mv $tmp $TAGDIR/$tag
+    done
 }
 
 # show tags associated with a file

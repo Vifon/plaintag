@@ -43,7 +43,6 @@ DEPENDENCIES
 ------------
 
 * `zsh`
-* `perl`
 * `zenity` for GUI
 
 AUTHOR
