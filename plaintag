@@ -81,6 +81,9 @@ rm_tags()
         tmp="$(mktemp)"
         grep --fixed-strings --line-regexp --invert-match -- $file $TAGDIR/$tag > $tmp
         mv $tmp $TAGDIR/$tag
+        if [[ ! -s $TAGDIR/$tag ]]; then
+            rm $TAGDIR/$tag
+        fi
     done
 }
 
